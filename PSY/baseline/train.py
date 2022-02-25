@@ -187,7 +187,7 @@ class Lite(LightningLite):
                     loss_value = 0
                     matches = 0
 
-            scheduler.step()
+            scheduler.step_update(epoch + 1)
 
             # val loop
             with torch.no_grad():
