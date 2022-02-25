@@ -8,3 +8,4 @@ matplotlib==3.2.1
 efficientnet_pytorch==0.7.1
 pytorch-lightning
 tqdm
+timm
