@@ -57,7 +57,7 @@ class CustomAugmentation:
         self.transform = transforms.Compose([
             CenterCrop((320, 256)),
             Resize(resize, Image.BILINEAR),
-            ImageNetPolicy(),
+            CIFAR10Policy(),
             ToTensor(),
             Normalize(mean=mean, std=std),
         ])
