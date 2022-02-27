@@ -277,7 +277,6 @@ if __name__ == "__main__":
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--dropout_rate', type=float, default=0.1, help='dropout rate')
     parser.add_argument('--criterion', type=str, default='focal', help='criterion type (default: focal)')
-    parser.add_argument('--policy', type=str, default='imagenet', help='augmentation policy type')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--early_stop', type=int, default=10, help='if steps don`t improve in 10 steps, training stops')
