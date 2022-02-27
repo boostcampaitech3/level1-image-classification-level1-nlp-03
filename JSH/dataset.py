@@ -52,20 +52,12 @@ class AddGaussianNoise(object):
 
 
 class CustomAugmentation:
-    def __init__(self, policy, resize, mean, std, **args):
-        self.policy = policy
-
-        if self.policy == "imagenet":
-            self.policy = ImageNetPolicy()
-        elif self.policy == "cifar10":
-            self.policy = CIFAR10Policy()
-        else:
-            self.policy = SVHNPolicy()
+    def __init__(self, resize, mean, std, **args):
 
         self.transform = transforms.Compose([
             CenterCrop((320, 256)),
             Resize(resize, Image.BILINEAR),
-            self.policy(),
+            ImageNetPolicy(),
             ToTensor(),
             Normalize(mean=mean, std=std),
         ])
