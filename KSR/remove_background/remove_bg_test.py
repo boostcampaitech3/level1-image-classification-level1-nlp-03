@@ -11,7 +11,7 @@ output_path = './incorret_mask_background.jpg'
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 f = np.fromfile(input_path)
-result = remove(f, only_mask=True, session=None)
+result = remove(f)
 torch.cuda.synchronize()
 img = Image.open(io.BytesIO(result)).convert("RGB")
 img.save(output_path)
