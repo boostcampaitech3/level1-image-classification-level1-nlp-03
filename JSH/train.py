@@ -2,19 +2,16 @@ import argparse
 import glob
 import json
 import multiprocessing
-from operator import mod
 import os
 import random
 import re
 from importlib import import_module
 from pathlib import Path
-from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 from pytorch_lightning.lite import LightningLite
 from timm.scheduler.step_lr import StepLRScheduler
 import torch
-from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.transforms import *
