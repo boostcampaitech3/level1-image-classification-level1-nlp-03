@@ -5,7 +5,6 @@ from importlib import import_module
 
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
 
 from dataset import TestDataset, MaskBaseDataset
 
