@@ -15,7 +15,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.transforms import *
-from pytorchtools import EarlyStopping
+from utils.pytorchtools import EarlyStopping
 
 from dataset import MaskBaseDataset
 from loss import create_criterion

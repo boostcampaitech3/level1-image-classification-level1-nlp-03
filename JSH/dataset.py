@@ -3,7 +3,7 @@ import random
 from collections import defaultdict
 from enum import Enum
 from typing import Tuple, List
-from autoaugment import ImageNetPolicy
+from utils.autoaugment import ImageNetPolicy
 
 import numpy as np
 import torch
