@@ -3,7 +3,7 @@ import random
 from collections import defaultdict
 from enum import Enum
 from typing import Tuple, List
-from autoaugment import ImageNetPolicy, CIFAR10Policy, SVHNPolicy
+from autoaugment import ImageNetPolicy
 
 import numpy as np
 import torch
@@ -57,7 +57,7 @@ class CustomAugmentation:
         self.transform = transforms.Compose([
             CenterCrop((320, 256)),
             Resize(resize, Image.BILINEAR),
-            CIFAR10Policy(),
+            ImageNetPolicy(),
             ToTensor(),
             Normalize(mean=mean, std=std),
         ])

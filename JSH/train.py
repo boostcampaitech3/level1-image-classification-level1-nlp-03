@@ -2,6 +2,7 @@ import argparse
 import glob
 import json
 import multiprocessing
+from operator import mod
 import os
 import random
 import re
@@ -17,6 +18,7 @@ from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.transforms import *
+from pytorchtools import EarlyStopping
 
 from dataset import MaskBaseDataset
 from loss import create_criterion
@@ -88,7 +90,7 @@ class Lite(LightningLite):
     def run(self, data_dir, model_dir, args):
         seed_everything(args.seed)
 
-        save_dir = increment_path(os.path.join(model_dir, f"{args.model}_{args.name}"))
+        save_dir = increment_path(os.path.join(model_dir, f"{args.name}"))
 
         # -- dataset
         
@@ -165,9 +167,9 @@ class Lite(LightningLite):
         train_loader = self.setup_dataloaders(train_loader)
         val_loader = self.setup_dataloaders(val_loader)
 
-        best_val_acc = 0
-        not_improved_cnt = 0
-        best_val_loss = np.inf
+        # -- early stopping
+        early_stopping = EarlyStopping(patience=args.earlystop, path=f"{save_dir}/best.pth")
+
         for epoch in range(args.epochs):
             # train loop
             model.train()
@@ -199,6 +201,7 @@ class Lite(LightningLite):
                     matches = 0
 
             scheduler.step_update(epoch + 1)
+            best_epoch = 0
 
             # val loop
             with torch.no_grad():
@@ -231,24 +234,25 @@ class Lite(LightningLite):
 
                 val_loss = np.sum(val_loss_items) / len(val_loader)
                 val_acc = np.sum(val_acc_items) / len(val_set)
-                best_val_loss = min(best_val_loss, val_loss)
-                if val_acc > best_val_acc:
-                    print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
-                    torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
-                    best_val_acc = val_acc
-                    not_improved_cnt = 0
-                else :
-                    not_improved_cnt += 1
-                
-                if not_improved_cnt > args.early_stop:
-                    print("Validation performance didn\'t improve for {} epochs. "
-                                     "Training stops.".format(args.early_stop))
-                    print(f"Stopped Epoch : {epoch}")
+
+
+                early_stopping(val_loss, val_acc, model)
+
+                if early_stopping.early_stop:
+                    print()
+                    print("="*50)
+                    print("Early Stop")
+                    print(f"Current val loss value didn't improve for {args.earlystop} count")
+                    print(f"Stopped Epoch : {best_epoch}")
 
                     break
 
+                if early_stopping.counter == 0: # save epoch when best model saved
+                    best_epoch = epoch
+                
+            
                 torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
-                print(f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || " f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}")
+                print(f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || " f"best acc : {early_stopping.val_acc_max:4.2%}, best loss: {early_stopping.val_loss_min:4.2}")
                 logger.add_scalar("Val/loss", val_loss, epoch)
                 logger.add_scalar("Val/accuracy", val_acc, epoch)
                 logger.add_figure("results", figure, epoch)
@@ -268,9 +272,9 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=3, help='number of epochs to train (default: 1)')
     parser.add_argument('--dataset', type=str, default='MaskSplitByProfileDataset', help='dataset')
     parser.add_argument('--augmentation', type=str, default='CustomAugmentation', help='data augmentation type (default: CustomAugmentation)')
-    parser.add_argument("--resize", nargs="+", type=list, default=[224, 224], help='resize size for image when training')
+    parser.add_argument("--resize", nargs="+", type=list, default=[384, 384], help='resize size for image when training')
     parser.add_argument('--batch_size', type=int, default=16, help='input batch size for training (default: 64)')
-    parser.add_argument('--valid_batch_size', type=int, default=150, help='input batch size for validing (default: 4)')
+    parser.add_argument('--valid_batch_size', type=int, default=64, help='input batch size for validing (default: 4)')
     parser.add_argument('--model', type=str, default='EfficientNet', help='model type (default: BaseModel)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--lr', type=float, default=1e-5, help='learning rate (default: 1e-3)')
@@ -279,7 +283,7 @@ if __name__ == "__main__":
     parser.add_argument('--criterion', type=str, default='focal', help='criterion type (default: focal)')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
-    parser.add_argument('--early_stop', type=int, default=10, help='if steps don`t improve in 10 steps, training stops')
+    parser.add_argument('--earlystop', type=int, default=5, help='early stop patience')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
 
     args = parser.parse_args()
