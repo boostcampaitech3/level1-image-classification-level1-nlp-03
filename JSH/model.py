@@ -7,6 +7,37 @@ from efficientnet_pytorch import EfficientNet as EffNet
 from models.swin_transformer import SwinTransformer
 from pytorch_pretrained_vit import ViT
 
+class BaseModel(nn.Module):
+    def __init__(self, num_classes, dropout_rate= 0):
+        super().__init__()
+
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=7, stride=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=1)
+        self.dropout1 = nn.Dropout(0.25)
+        self.dropout2 = nn.Dropout(0.25)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(128, num_classes)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = F.relu(x)
+
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout2(x)
+
+        x = self.avgpool(x)
+        x = x.view(-1, 128)
+        return self.fc(x)
+
+
 class VisionTransformer(nn.Module):
     def __init__(self, num_classes, dropout_rate=0.1,  selected="L_16_imagenet1k", pretrained=True) -> None:
         super().__init__()
@@ -61,7 +92,7 @@ class SwinTransformerLarge384(nn.Module):
         self,
         num_classes,
         pretrained = True,
-        dropout_rate=0.1
+        dropout_rate=0.
     ):
         super().__init__()
         self.swin_transformer = SwinTransformer(
@@ -72,6 +103,7 @@ class SwinTransformerLarge384(nn.Module):
             num_heads=(6, 12, 24, 48),
             window_size=12,
             drop_path_rate=0.2,
+            drop_rate=dropout_rate
         )
 
         file_name = "swin_transformer_large_384_384"
