@@ -165,7 +165,7 @@ class Lite(LightningLite):
         val_loader = self.setup_dataloaders(val_loader)
 
         # -- early stopping
-        early_stopping = EarlyStopping(patience=args.earlystop, path=f"{save_dir}/best.pth")
+        early_stopping = EarlyStopping(patience=args.earlystop, delta=args.delta, path=f"{save_dir}/best.pth")
 
         for epoch in range(args.epochs):
             # train loop
@@ -277,6 +277,8 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=1e-5, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--dropout_rate', type=float, default=0.1, help='dropout rate')
+    parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
+    parser.add_argument('--delta', type=float, default=0.01, help='early stopping delta')
     parser.add_argument('--criterion', type=str, default='focal', help='criterion type (default: focal)')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
