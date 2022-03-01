@@ -14,7 +14,7 @@ def load_model(saved_model, num_classes, device):
     model = model_cls(
         num_classes=num_classes,
         pretrained=False,
-        dropout_rate=0.1
+        dropout_rate=0.
     )
     
 
@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_EVAL', '/opt/ml/input/data/eval'))
-    parser.add_argument('--model_dir', type=str, default=f'./result/{args.model}/{args.name}')
+    parser.add_argument('--model_dir', type=str, default=f'/opt/ml/level1-image-classification-level1-nlp-03/JSH/result/{args.model}/{args.name}')
 
     args = parser.parse_args()
 
