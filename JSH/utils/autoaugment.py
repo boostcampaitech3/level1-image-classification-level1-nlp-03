@@ -1,5 +1,5 @@
 import numpy as np
-from ops import *
+from utils.ops import *
 
 """
 Source from https://github.com/DeepVoltaire/AutoAugment

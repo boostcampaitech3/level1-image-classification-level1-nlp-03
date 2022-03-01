@@ -55,6 +55,6 @@ class EarlyStopping:
         '''Saves model when validation loss decrease within delta value'''
         print("\n\nNew best model Created! Saving the best model..")
 
-        torch.save(model.state_dict(), self.path)
+        torch.save(model.module.state_dict(), self.path)
         self.val_loss_min = val_loss
         self.val_acc_max  = val_acc
