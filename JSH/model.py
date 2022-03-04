@@ -28,7 +28,6 @@ class EfficientNet(nn.Module):
         self,
         num_classes,
         pretrained = True,
-        dropout_rate=0.1
     ):
         super().__init__()
 
@@ -60,7 +59,6 @@ class SwinTransformerLarge384(nn.Module):
         self,
         num_classes,
         pretrained = True,
-        dropout_rate=0.
     ):
         super().__init__()
         self.swin_transformer = SwinTransformer(
@@ -71,7 +69,6 @@ class SwinTransformerLarge384(nn.Module):
             num_heads=(6, 12, 24, 48),
             window_size=12,
             drop_path_rate=0.2,
-            drop_rate=dropout_rate
         )
 
         file_name = "swin_transformer_large_384_384"

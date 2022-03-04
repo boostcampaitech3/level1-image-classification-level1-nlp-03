@@ -4,11 +4,10 @@ from collections import defaultdict
 from enum import Enum
 from typing import Tuple, List
 from utils.autoaugment import ImageNetPolicy
-
+from torch.utils.data import Dataset, Subset, random_split
 import numpy as np
 import torch
 from PIL import Image
-from torch.utils.data import Dataset, Subset, random_split
 from torchvision import transforms
 from torchvision.transforms import *
 
@@ -53,13 +52,14 @@ class AddGaussianNoise(object):
 
 class CustomAugmentation:
     def __init__(self, resize, mean, std, **args):
-
         self.transform = transforms.Compose([
             CenterCrop((320, 256)),
             Resize(resize, Image.BILINEAR),
-            ImageNetPolicy(),
+            ColorJitter(0.1, 0.1, 0.1, 0.1),
+            # ImageNetPolicy(),
             ToTensor(),
             Normalize(mean=mean, std=std),
+            # AddGaussianNoise()
         ])
 
     def __call__(self, image):
@@ -101,11 +101,13 @@ class AgeLabels(int, Enum):
 
         if value < 29:
             return cls.YOUNG
-        elif value < 58:
+        elif value < 57:
             return cls.MIDDLE
         else:
             return cls.OLD
 
+        
+        
 
 class MaskBaseDataset(Dataset):
     num_classes = 3 * 2 * 3
@@ -190,7 +192,7 @@ class MaskBaseDataset(Dataset):
 
     def __len__(self):
         return len(self.image_paths)
-
+    
     def get_mask_label(self, index) -> MaskLabels:
         return self.mask_labels[index]
 
@@ -236,16 +238,18 @@ class MaskBaseDataset(Dataset):
         train_set, val_set = random_split(self, [n_train, n_val])
         return train_set, val_set
 
-
+    
+    
 class MaskSplitByProfileDataset(MaskBaseDataset):
     """
+        undersampling code added
         train / val 나누는 기준을 이미지에 대해서 random 이 아닌
         사람(profile)을 기준으로 나눕니다.
         구현은 val_ratio 에 맞게 train / val 나누는 것을 이미지 전체가 아닌 사람(profile)에 대해서 진행하여 indexing 을 합니다
         이후 `split_dataset` 에서 index 에 맞게 Subset 으로 dataset 을 분기합니다.
     """
 
-    def __init__(self, data_dir, mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246), val_ratio=0.2):
+    def __init__(self, data_dir, mean=(0.20629331, 0.17723827, 0.16767759), std=(0.34968819, 0.30846628, 0.29714536), val_ratio=0.2):
         self.indices = defaultdict(list)
         super().__init__(data_dir, mean, std, val_ratio)
 
@@ -265,13 +269,21 @@ class MaskSplitByProfileDataset(MaskBaseDataset):
         profiles = os.listdir(self.data_dir)
         profiles = [profile for profile in profiles if not profile.startswith(".")]
         split_profiles = self._split_profile(profiles, self.val_ratio)
-
+        # 언더 샘플링 할 나이 리스트
+        undersample_list = list(range(18,30)) + list(range(48,60))
+        
         cnt = 0
         for phase, indices in split_profiles.items():
             for _idx in indices:
                 profile = profiles[_idx]
                 img_folder = os.path.join(self.data_dir, profile)
-                for file_name in os.listdir(img_folder):
+                
+                id, gender, race, age = profile.split("_")
+                img_list = os.listdir(img_folder)
+                if int(age) in undersample_list and phase == "train":
+                    img_list = set(img_list) - set(random.sample(img_list[1:6], k=4))
+                    
+                for file_name in img_list:
                     _file_name, ext = os.path.splitext(file_name)
                     if _file_name not in self._file_names:  # "." 로 시작하는 파일 및 invalid 한 파일들은 무시합니다
                         continue
@@ -288,7 +300,6 @@ class MaskSplitByProfileDataset(MaskBaseDataset):
                     self.gender_labels.append(gender_label)
                     self.age_labels.append(age_label)
 
-
                     self.indices[phase].append(cnt)
                     cnt += 1
 
@@ -297,10 +308,13 @@ class MaskSplitByProfileDataset(MaskBaseDataset):
 
 
 class TestDataset(Dataset):
-    def __init__(self, img_paths, resize, mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246)):
+    def __init__(self, img_paths, resize, mean=(0.20683326, 0.16344436, 0.15733106), std=(0.35039557, 0.28900916, 0.27917677)):
         self.img_paths = img_paths
         self.transform = transforms.Compose([
+            CenterCrop((320, 256)),
             Resize(resize, Image.BILINEAR),
+            # ColorJitter(0.1, 0.1, 0.1, 0.1),
+            # ImageNetPolicy(),
             ToTensor(),
             Normalize(mean=mean, std=std),
         ])
