@@ -94,7 +94,8 @@ class Lite(LightningLite):
      
         dataset_module = getattr(import_module("dataset"), args.dataset)  # default: MaskBaseDataset
         dataset = dataset_module(
-            data_dir=data_dir
+            data_dir=data_dir,
+            val_ratio=args.val_ratio
         ) 
         num_classes = dataset.num_classes  # 18
 
@@ -134,7 +135,6 @@ class Lite(LightningLite):
         model_module = getattr(import_module("model"), args.model)  # default: BaseModel
         model = model_module(
             num_classes=num_classes,
-            dropout_rate=args.dropout_rate,
         )
 
         # -- loss & metric
@@ -165,7 +165,7 @@ class Lite(LightningLite):
         val_loader = self.setup_dataloaders(val_loader)
 
         # -- early stopping
-        early_stopping = EarlyStopping(patience=args.earlystop, path=f"{save_dir}/best.pth")
+        early_stopping = EarlyStopping(patience=args.earlystop, delta=args.delta, path=f"{save_dir}/best.pth")
 
         for epoch in range(args.epochs):
             # train loop
@@ -235,6 +235,9 @@ class Lite(LightningLite):
 
                 early_stopping(val_loss, val_acc, model)
 
+                if early_stopping.saved: # save epoch when best model saved
+                    best_epoch = epoch
+
                 if early_stopping.early_stop:
                     print()
                     print("="*50)
@@ -243,9 +246,6 @@ class Lite(LightningLite):
                     print(f"Stopped Epoch : {best_epoch}")
 
                     break
-
-                if early_stopping.counter == 0: # save epoch when best model saved
-                    best_epoch = epoch
                 
             
                 torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--lr', type=float, default=1e-5, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
-    parser.add_argument('--dropout_rate', type=float, default=0.1, help='dropout rate')
+    parser.add_argument('--delta', type=float, default=0.01, help='early stopping delta')
     parser.add_argument('--criterion', type=str, default='focal', help='criterion type (default: focal)')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')

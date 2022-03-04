@@ -27,6 +27,7 @@ class EarlyStopping:
 
         self.val_loss_min = np.Inf
         self.val_acc_max = 0
+        self.saved= False
         
         
 
@@ -36,10 +37,12 @@ class EarlyStopping:
 
         if self.best_val_loss is None:
             self.best_val_loss = score
+            self.saved = True
             self.save_checkpoint(val_loss, val_acc, model)
 
         elif score <= self.best_val_loss + self.delta: # If loss shows no improvement in performance more than delta value,  add counter
             self.counter += 1
+            self.saved = False
 
             print()
             print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -49,6 +52,7 @@ class EarlyStopping:
         else:
             self.counter = 0
             self.best_val_loss = score
+            self.saved = True
             self.save_checkpoint(val_loss, val_acc, model)
 
     def save_checkpoint(self, val_loss, val_acc, model):
