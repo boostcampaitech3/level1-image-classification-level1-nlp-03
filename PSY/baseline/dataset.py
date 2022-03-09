@@ -97,10 +97,10 @@ class AgeLabels(int, Enum):
             value = int(value)
         except Exception:
             raise ValueError(f"Age value should be numeric, {value}")
-
-        if value < 30:
+        #나이 범위 건드리는 곳
+        if value < 29:
             return cls.YOUNG
-        elif value < 60:
+        elif value < 58:
             return cls.MIDDLE
         else:
             return cls.OLD
@@ -208,6 +208,12 @@ class MaskBaseDataset(Dataset):
         return mask_label * 6 + gender_label * 3 + age_label
 
     @staticmethod
+    def encode_multi_label(mask_label, gender_label, age_label) -> int:
+        labels = [mask_label, gender_label * 2, age_label]
+        labels = torch.FloatTensor(labels)
+        return labels
+
+    @staticmethod
     def decode_multi_class(multi_class_label) -> Tuple[MaskLabels, GenderLabels, AgeLabels]:
         mask_label = (multi_class_label // 6) % 3
         gender_label = (multi_class_label // 3) % 2
@@ -253,7 +259,8 @@ class MaskSplitByProfileDataset(MaskBaseDataset):
         length = len(profiles)
         n_val = int(length * val_ratio)
 
-        val_indices = set(random.choices(range(length), k=n_val))
+        #choice->sample
+        val_indices = set(random.sample(range(length), k=n_val))
         train_indices = set(range(length)) - val_indices
         return {
             "train": train_indices,
@@ -264,13 +271,20 @@ class MaskSplitByProfileDataset(MaskBaseDataset):
         profiles = os.listdir(self.data_dir)
         profiles = [profile for profile in profiles if not profile.startswith(".")]
         split_profiles = self._split_profile(profiles, self.val_ratio)
+        undersample_list = list(range(18,30)) + list(range(48,60)) #언더샘플링 age
 
         cnt = 0
         for phase, indices in split_profiles.items():
             for _idx in indices:
                 profile = profiles[_idx]
                 img_folder = os.path.join(self.data_dir, profile)
-                for file_name in os.listdir(img_folder):
+
+                id, gender, race, age = profile.split("_")
+                img_list = os.listdir(img_folder)
+                if int(age) in undersample_list and phase == "train":
+                    img_list = set(img_list) - set(random.sample(img_list[1:6], k=4))
+                    
+                for file_name in img_list:
                     _file_name, ext = os.path.splitext(file_name)
                     if _file_name not in self._file_names:  # "." 로 시작하는 파일 및 invalid 한 파일들은 무시합니다
                         continue
