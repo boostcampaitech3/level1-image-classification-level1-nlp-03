@@ -1,0 +1,109 @@
+------------------------------------------------
+python3 train.py --epochs 10 --lr 1e-5 --model Eff_b6 --batch_size 64 --valid_batch_size 64 --optimizer Adam 
+python3 inference.py --model Eff_b6 --model_dir './model/exp10'
+--> train:90  val : 89.31 ->0.4896 ,63.2063
+
+
+------------------------------------------------
+python3 train.py --epochs 20 --lr 1e-5 --model Eff_b6 --batch_size 64 --valid_batch_size 64 --optimizer Adam --criterion focal 
+python3 inference.py --model Eff_b6 --model_dir './model/exp11'
+--> train: 97 val:93.81 -> 제출 X
+
+------------------------------------------------
+python3 train.py --epochs 30 --lr 1e-5 --model Eff_b7 --batch_size 64 --valid_batch_size 64 --optimizer Adam --criterion focal 
+python3 inference.py --model Eff_b7 --model_dir './model/exp13'
+--> train:99 val:96.48 -> 제출 X
+
+------------------------------------------------
+python3 train.py --epochs 40 --lr 1e-5 --model Eff_b7 --batch_size 64 --valid_batch_size 64 --optimizer Adam --criterion focal
+python3 inference.py --model Eff_b7 --model_dir './model/exp15'
+--> train:99 val:96.80 -> 0.6077	68.2063
+
+
+------------------------------------------------
+python3 train.py --epochs 40 --lr 1e-5 --model Eff_b7 --batch_size 64 --valid_batch_size 64 --optimizer Adam --criterion focal --augmentation CustomAugmentation
+python3 inference.py --model Eff_b7 --model_dir './model/exp17'
+--> train: val: ->  기록 지워서 알 수 없음
+
+--------------------------age 25 ,55----------------------
+python3 train.py --epochs 40 --lr 1e-5 --model Eff_b7 --batch_size 64 --valid_batch_size 64 --optimizer Adam --criterion focal
+python3 inference.py --model Eff_b7 --model_dir './model/exp18'
+--> train:99 val:92.83 -> 0.5891	64.4286
+ 
+
+ --------------------------age 27 ,57----------------------
+python3 train.py --epochs 40 --lr 1e-5 --model Eff_b7 --batch_size 32 --optimizer Adam --criterion focal  -
+python3 inference.py --model Vitt --model_dir './model/exp?'
+--> train: val: -> 기록 지워서 알 수 없음
+
+ --------------------------age 27 ,57----------------------
+python3 train.py --epochs 3 --lr 1e-5 --model Vitt --batch_size 64 --valid_batch_size 64 --optimizer Adam --criterion focal --model_version vit_large_patch16_224 --resize 224,224
+python3 inference.py --model Vitt --model_dir './model/exp?'
+--> train: val: -> 기록 지워서 알 수 없음
+
+
+ --------------------------age 29 ,57 + vit + random.choises -> ranmdom.sample()----------------------
+python3 train.py --epochs 30 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 32 --valid_batch_size 64 --model Vit --optimizer AdamW --lr 2e-5 --criterion focal --lr_decay_step 4
+python3 inference.py --model Vit --model_dir './model/exp29'
+--> train: val: -> 별로..
+
+
+--------------------------age 29 ,57 + swin transfomer + random.choises -> ranmdom.sample(),f1 loss----------------------
+python3 train.py --epochs 1 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 16 --valid_batch_size 64 --model SwinTransformerLarge384 --optimizer AdamW --lr 2e-5 --criterion f1 --lr_decay_step 4
+python3 inference.py --model SwinTransformerLarge384 --model_dir './model/exp38' --batch_size 128
+
+--> 0.6621	73.8571
+
+----------------------------------------------------------위는 base_v2,아래는 base_psy------------------------------------------------------------
+
+--------------------------age 29 ,57 + swin transfomer + random.choises -> ranmdom.sample(),f1 loss,epoch5 (세연님꺼받고)----------------------
+python3 train.py --epochs 5 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 16 --valid_batch_size 64 --model SwinTransformerLarge384 --optimizer AdamW --lr 2e-5 --criterion f1 --lr_decay_step 4
+python3 inference.py --model SwinTransformerLarge384 --model_dir './model/exp2' --batch_size 64
+--> 0.7763	81.7619 1등
+
+
+---------------------------age 29 ,57 + swin transfomer + random.choises -> ranmdom.sample(),f1 loss,epoch5 (세연님꺼받고)----------------------
+python3 train.py --epochs 15 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 16 --valid_batch_size 64 --model SwinTransformerLarge384 --optimizer AdamW --lr 2e-5 --criterion f1 --lr_decay_step 4
+python3 inference.py --model SwinTransformerLarge384 --model_dir './model/exp4' --batch_size 64
+
+--> 0.7594	79.8730 줄어듦
+
+---------------------------age 29 ,57 + swin transfomer + random.choises -> ranmdom.sample(),f1 loss,epoch5 (세연님꺼받고)----------------------
+python3 train.py --epochs 13 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 16 --valid_batch_size 64 --model SwinTransformerLarge384 --optimizer AdamW --lr 2e-5 --criterion f1 --lr_decay_step 4
+python3 inference.py --model SwinTransformerLarge384 --model_dir './model/exp5' --batch_size 64
+
+--> 0.7594	79.8730 줄어듦 (epoch 15와 같음)
+
+---------------------------age 29 ,57 + swin transfomer + random.choises -> ranmdom.sample(),f1 loss,epoch1, f1에서 classes 2로 (세연님꺼받고)-----------------
+python3 train.py --epochs 6 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 16 --valid_batch_size 64 --model SwinTransformerLarge384 --optimizer AdamW --lr 2e-5 --criterion f1 --lr_decay_step 4
+
+--> classes 2하면 안 됨
+---------------------------age 29 ,57 + swin transfomer + random.choises -> ranmdom.sample(),f1 loss,epoch 7 (세연님꺼받고)-----------------
+python3 train.py --epochs 7 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 16 --valid_batch_size 64 --model SwinTransformerLarge384 --optimizer AdamW --lr 2e-5 --criterion f1 --lr_decay_step 4
+python3 inference.py --model SwinTransformerLarge384 --model_dir './model/exp9' --batch_size 64
+
+텐서보드 : loss 줄어들지 않음  -> 제출했는데 왜 더떨어지지..?
+
+------------------epochs 5+ age 58
+python3 train.py --epochs 5 --dataset MaskSplitByProfileDataset --augmentation CustomAugmentation --batch_size 16 --valid_batch_size 64 --model SwinTransformerLarge384 --optimizer AdamW --lr 2e-5 --criterion f1 --lr_decay_step 4
+python3 inference.py --model SwinTransformerLarge384 --model_dir './model/exp12' --batch_size 64
+
+
+29,58이 최적!
+---------------------------------------------------이후에는 노션 관리----------------------------------------------
+최적 실험:
+
+-epochs :5
+-dataset : MaskSplitByProfileDataset
+-augmentation : CustomAugmentation
+-batch_size : 16
+-valid_batch_size : 64
+-model : SwinTransformerLarge384
+-optimizer : AdamW
+-lr : 2e-5
+-criterion : f1
+-lr_decay_step : 4
+-ageband : (29,58)
+-val_ratio : 0.2
+
+등등
