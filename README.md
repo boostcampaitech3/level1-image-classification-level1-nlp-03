@@ -53,10 +53,10 @@ ksl970330@naver.com|gimty97@gmail.com|maylilyo02@gmail.com|jaehahk810@naver.com|
 | --- | --- |
 | 프로젝트 주제 | 카메라로 촬영한 사람 얼굴 이미지를 통해 연령,성별,마스크 착용 여부를 판단 |
 | 프로젝트 개요 | 부스트캠프 Level1-U stage 강의를 통해 배운 내용을 바탕으로, 모델을 설계하고 학습하며 추론을 통해 나온 결과를 바탕으로 순위 산정하는 방식 |
-| 활용 장비 및 재료 | • GPU : Tesla V100<br>• 개발환경 : Jupyter Lab , VS code<br>• 협업 tool<br><blockquote>◦Notion : 회의록 정리 , Experiment Page 만들어서 실험 정리 및 공유</blockquote><blockquote>◦Github : 코드 협업</blockquote><blockquote>◦Slack, 카카오톡 : 활발한 의견 공유</blockquote> |
+| 활용 장비 및 재료 | • GPU : Tesla V100<br>• 개발환경 : Jupyter Lab , VS code<br>• 협업 tool<br><blockquote>◦Notion : 회의록 정리 , Experiment Page 만들어서 실험 정리 및 공유<br>◦Github : 코드 협업<br>◦Slack, 카카오톡 : 활발한 의견 공유</blockquote> |
 | 프로젝트 구조및 사용 데이터셋의 구조도(연관도)  | • metric : Macro F1 Score<br>• Data :<blockquote>◦ 20~70대의 아시아인 남녀(4500명)<br>◦ 한 사람당 사진의 개수: 7 [마스크 착용 5장, 이상하게 착용(코스크, 턱스크) 1장, 미착용 1장]<br>◦ 이미지 크기 : (384,512)<br>◦ train : 전체 데이터셋의 60%<br>◦ eval : public 20% , private 20%</blockquote> |
 | 기대 효과 | 사진 이미지 만으로 사람이 마스크를 올바르게 잘 썼는지 자동으로 가려낼 수 있는 시스템을 구현하고, 이 시스템이 공공장소 입구에 갖춰져 있다면 적은 인적자원으로도 충분히 검사가 가능할 것이다. |
-|
+
 
 
 <br> 
