@@ -81,6 +81,12 @@ def increment_path(path, exist_ok=False):
         return f"{path}{n}"
 
 
+def freeze_layers(model):
+    for name, param in model.named_parameters():
+        if "swin_transformer.head" not in name:
+            param.requires_grad = False
+
+
 class Lite(LightningLite):
     def run(self, data_dir, model_dir, args):
         seed_everything(args.seed)
@@ -91,6 +97,7 @@ class Lite(LightningLite):
         dataset_module = getattr(import_module("dataset"), args.dataset)  # default: MaskBaseDataset
         dataset = dataset_module(
             data_dir=data_dir,
+            val_ratio=args.val_ratio,
         )
         num_classes = dataset.num_classes  # 18
 
@@ -112,7 +119,7 @@ class Lite(LightningLite):
             num_workers=multiprocessing.cpu_count() // 2,
             shuffle=True,
             pin_memory=True,
-            drop_last=True,
+            drop_last=False,
         )
 
         val_loader = DataLoader(
@@ -121,12 +128,13 @@ class Lite(LightningLite):
             num_workers=multiprocessing.cpu_count() // 2,
             shuffle=False,
             pin_memory=True,
-            drop_last=True,
+            drop_last=False,
         )
 
         # -- model
         model_module = getattr(import_module("model"), args.model)  # default: BaseModel
         model = model_module(num_classes=num_classes)
+        # freeze_layers(model)
 
         # -- loss & metric
         criterion = create_criterion(args.criterion)  # default: cross_entropy
@@ -143,7 +151,7 @@ class Lite(LightningLite):
             warmup_lr_init=2e-08,
             warmup_t=5,
             t_in_epochs=False,
-        )
+        )  # warmup 적용을 위해 fastai team에서 만든 timm library의 scheduler
 
         # -- logging
         logger = SummaryWriter(log_dir=save_dir)
@@ -162,32 +170,51 @@ class Lite(LightningLite):
             model.train()
             loss_value = 0
             matches = 0
+            label_matches = 0
             for idx, train_batch in enumerate(train_loader):
                 inputs, labels = train_batch
 
                 optimizer.zero_grad()
 
                 outs = model(inputs)
-                preds = torch.argmax(outs, dim=-1)
+                # outs: [0, 0, 0, 1, 0,0,0, 0]  num classes 18개
+                # outs: [1, 0, 2]  num_classes 3개
+                is_ml = False
+                if is_ml:
+                    preds = torch.round(outs)
+                    preds = preds.type(torch.int32)
+                    label_preds = preds
+                    preds = preds[0] * 6 + (preds[1] // 2) * 3 + preds[2]
+                else:
+                    preds = torch.argmax(outs, dim=-1)
                 loss = criterion(outs, labels)
 
                 self.backward(loss)
                 optimizer.step()
 
                 loss_value += loss.item()
-                matches += (preds == labels).sum().item()
+                if is_ml:
+                    label_matches += (label_preds == labels).sum().item()  # label acc
+                    matches += (preds == labels[0] * 6 + (labels[1] // 2) * 3 + labels[2]).sum().item()  # 실제 acc
+                else:
+                    matches += (preds == labels).sum().item()
                 if (idx + 1) % args.log_interval == 0:
                     train_loss = loss_value / args.log_interval
+                    if is_ml:
+                        train_label_acc = label_matches / args.batch_size / args.log_interval / 3
                     train_acc = matches / args.batch_size / args.log_interval
                     current_lr = get_lr(optimizer)
-                    print(f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || " f"training loss {train_loss:4.4} || training accuracy {train_acc:4.2%} || lr {current_lr}")
+                    print(f"Epoch[{epoch+1}/{args.epochs}]({idx + 1}/{len(train_loader)}) || training loss {train_loss:4.4} || training accuracy {train_acc:4.2%} || lr {current_lr}")
                     logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
+                    if is_ml:
+                        logger.add_scalar("Train/label_accuracy", train_label_acc, epoch * len(train_loader) + idx)
                     logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
 
                     loss_value = 0
                     matches = 0
+                    label_matches = 0
 
-            scheduler.step_update(epoch + 1)
+            scheduler.step_update(epoch + 1)  # timm
 
             # val loop
             with torch.no_grad():
@@ -196,7 +223,7 @@ class Lite(LightningLite):
                 val_loss_items = []
                 val_acc_items = []
                 figure = None
-                for val_batch in val_loader:
+                for val_batch in tqdm(val_loader, total=len(val_set) // args.valid_batch_size + 1):
                     inputs, labels = val_batch
 
                     outs = model(inputs)
@@ -225,8 +252,9 @@ class Lite(LightningLite):
                     print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
                     torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
                     best_val_acc = val_acc
+
                 torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
-                print(f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || " f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}")
+                print(f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}")
                 logger.add_scalar("Val/loss", val_loss, epoch)
                 logger.add_scalar("Val/accuracy", val_acc, epoch)
                 logger.add_figure("results", figure, epoch)
@@ -246,8 +274,8 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=1, help="number of epochs to train (default: 1)")
     parser.add_argument("--dataset", type=str, default="MaskBaseDataset", help="dataset augmentation type (default: MaskBaseDataset)")
     parser.add_argument("--augmentation", type=str, default="BaseAugmentation", help="data augmentation type (default: BaseAugmentation)")
+    # parser.add_argument("--resize", nargs="+", type=list, default=[224, 224], help="resize size for image when training")
     parser.add_argument("--resize", nargs="+", type=list, default=[384, 384], help="resize size for image when training")
-    # parser.add_argument("--resize", nargs="+", type=list, default=[128, 96], help="resize size for image when training")
     parser.add_argument("--batch_size", type=int, default=64, help="input batch size for training (default: 64)")
     parser.add_argument("--valid_batch_size", type=int, default=1000, help="input batch size for validing (default: 1000)")
     parser.add_argument("--model", type=str, default="BaseModel", help="model type (default: BaseModel)")
